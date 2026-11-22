@@ -17,6 +17,7 @@ jobs:
       - run: find . -name '*.php' -not -path './.git/*' -exec php -l {} \;
       - run: php tests/run.php
       - run: php tests/render.php
+      - run: php tests/reporting.php
       - run: php tests/isolation.php
       - run: php tests/routing.php
       - run: php tests/run.php --temporary-webhook

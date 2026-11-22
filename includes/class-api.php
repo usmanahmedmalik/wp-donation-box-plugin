@@ -11,7 +11,7 @@ final class Donation_Box_API {
         });
     }
     public static function temporary_test_webhook($wp): void {
-        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || wp_parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) !== '/sprocess') { return; }
+        if (sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST' || wp_parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? '')), PHP_URL_PATH) !== '/sprocess') { return; }
         // Core's rest_api_loaded runs next (priority 10), preserving the raw body,
         // Stripe-Signature header and REST responses. No rewrite rules to flush.
         // Always use test mode, regardless of form settings or query parameters.
@@ -37,7 +37,7 @@ final class Donation_Box_API {
             }
         }
         // Use the direct peer address; never trust a visitor-supplied forwarding header.
-        $bucket = 'donation_box_rate_' . hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? 'unknown', wp_salt('nonce'));
+        $bucket = 'donation_box_rate_' . hash_hmac('sha256', sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'] ?? 'unknown')), wp_salt('nonce'));
         $attempts = (int) get_transient($bucket);
         if ($attempts >= 10) { return new WP_Error('rate_limit', __('Please wait a few minutes before trying again.', 'donation-box'), ['status' => 429]); }
         set_transient($bucket, $attempts + 1, 10 * MINUTE_IN_SECONDS);
@@ -98,7 +98,8 @@ final class Donation_Box_API {
         // WP REST authenticates the logged-in cookie with X-WP-Nonce.
         $mode = Donation_Box_Settings::get()['mode'];
         $customer = sanitize_text_field($request->get_param('customer_id') ?? '');
-        $owned = $wpdb->get_var($wpdb->prepare('SELECT customer_id FROM ' . Donation_Box_Store::table('payments') . " WHERE user_id = %d AND mode = %s AND status IN ('paid','refunded','partially_refunded') AND customer_id = %s LIMIT 1", get_current_user_id(), $mode, $customer));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $owned = $wpdb->get_var($wpdb->prepare("SELECT customer_id FROM %i WHERE user_id = %d AND mode = %s AND status IN ('paid','refunded','partially_refunded') AND customer_id = %s LIMIT 1", Donation_Box_Store::table('payments'), get_current_user_id(), $mode, $customer));
         if (!$owned) { return new WP_Error('customer', __('No matching donor account.', 'donation-box'), ['status' => 404]); }
         try {
             $session = Donation_Box_Stripe::request($mode, 'billing_portal/sessions', ['customer' => $owned, 'return_url' => self::return_url((string) $request->get_param('return_url'))]);
@@ -119,17 +120,21 @@ final class Donation_Box_API {
         }
         // Serialize handlers across workers; a crashed worker releases its connection lock.
         $lock = 'dbox_' . md5(Donation_Box_Store::table('events'));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         if ((int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', $lock)) !== 1) {
             return new WP_Error('busy', 'Retry later', ['status' => 503]);
         }
         try {
             $table = Donation_Box_Store::table('events');
-            if ($wpdb->get_var($wpdb->prepare("SELECT event_id FROM $table WHERE event_id = %s", $event['id']))) { return ['received' => true]; }
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+            if ($wpdb->get_var($wpdb->prepare('SELECT event_id FROM %i WHERE event_id = %s', $table, $event['id']))) { return ['received' => true]; }
             self::handle($event['type'], $event['data']['object'], $mode);
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
             if (!$wpdb->insert($table, ['event_id' => $event['id'], 'processed_at' => current_time('mysql', true)])) { throw new RuntimeException('Event persistence failed'); }
             return ['received' => true];
         } catch (Throwable $e) {
             return new WP_Error('processing', 'Processing failed; retry delivery', ['status' => 500]);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         } finally { $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock)); }
     }
     public static function handle(string $type, array $object, string $mode): void {
@@ -186,7 +191,8 @@ final class Donation_Box_API {
             $stripe_id = $charge['invoice'] ?? $intent;
             global $wpdb;
             $status = !empty($charge['refunded']) ? 'refunded' : 'partially_refunded';
-            if ($wpdb->query($wpdb->prepare('UPDATE ' . Donation_Box_Store::table('payments') . ' SET status = %s, refunded_amount = %d WHERE stripe_id = %s AND mode = %s', $status, (int) ($charge['amount_refunded'] ?? 0), $stripe_id, $mode)) === false) { throw new RuntimeException('Refund persistence failed'); }
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+            if ($wpdb->query($wpdb->prepare('UPDATE %i SET status = %s, refunded_amount = %d WHERE stripe_id = %s AND mode = %s', Donation_Box_Store::table('payments'), $status, (int) ($charge['amount_refunded'] ?? 0), $stripe_id, $mode)) === false) { throw new RuntimeException('Refund persistence failed'); }
         }
     }
     private static function settled_status(string $intent_id, string $mode): array {
@@ -211,7 +217,9 @@ final class Donation_Box_API {
             'period_end' => $sub['current_period_end'] ?? $item['current_period_end'] ?? 0,
             'updated_at' => current_time('mysql', true),
         ];
-        $existing = $wpdb->get_var($wpdb->prepare('SELECT id FROM ' . Donation_Box_Store::table('subscriptions') . ' WHERE stripe_id = %s', $id));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $existing = $wpdb->get_var($wpdb->prepare('SELECT id FROM %i WHERE stripe_id = %s', Donation_Box_Store::table('subscriptions'), $id));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         $result = $existing ? $wpdb->update(Donation_Box_Store::table('subscriptions'), $data, ['id' => $existing]) : $wpdb->insert(Donation_Box_Store::table('subscriptions'), $data);
         if ($result === false) { throw new RuntimeException('Subscription persistence failed'); }
         Donation_Box_Store::update((int) $row->id, ['customer_id' => $sub['customer'], 'subscription_id' => $id]);

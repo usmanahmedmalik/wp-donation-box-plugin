@@ -7,7 +7,8 @@ import struct
 
 root = Path(__file__).resolve().parent.parent
 # Source strings and Dutch translations, separated by a tab.
-source = '''Temporary testing webhook URL	Tijdelijke webhook-URL voor tests
+source = '''Choose colors to match your website.	Kies kleuren die bij je website passen.
+Temporary testing webhook URL	Tijdelijke webhook-URL voor tests
 Server-to-server POST endpoint for Stripe testing only. Uses the test webhook signing secret above, even when the donation form is in live mode. This is not a donor return or success page. No permalink resaving is required.	Server-naar-server POST-eindpunt uitsluitend voor Stripe-tests. Gebruikt de bovenstaande geheime testwebhooksleutel, ook als het donatieformulier in livemodus staat. Dit is geen terugkeer- of succespagina voor donateurs. Permalinks hoeven niet opnieuw te worden opgeslagen.
 1. Your donation	1. Uw donatie
 2. Your details	2. Uw gegevens

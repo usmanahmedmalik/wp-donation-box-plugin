@@ -46,6 +46,9 @@ msgstr ""
 msgid "Choose an amount between 1 and 99,999.99."
 msgstr ""
 
+msgid "Choose colors to match your website."
+msgstr ""
+
 msgid "Choose your amount"
 msgstr ""
 
@@ -80,9 +83,6 @@ msgid "Date (UTC)"
 msgstr ""
 
 msgid "Default: %s"
-msgstr ""
-
-msgid "Defaults match the ABAM website. Change these to match any theme."
 msgstr ""
 
 msgid "Description"

@@ -100,6 +100,7 @@ Read [data and operations](docs/SETUP.md#data-and-operations) for limitations. T
 ```sh
 php tests/run.php
 php tests/render.php
+php tests/reporting.php
 php tests/isolation.php
 php tests/routing.php
 php tests/run.php --temporary-webhook

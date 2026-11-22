@@ -18,9 +18,11 @@ final class Donation_Box_Admin {
     public static function dashboard(): void {
         global $wpdb; self::start(__('Donation Box', 'donation-box'));
         $mode = Donation_Box_Settings::get()['mode'];
+        /* translators: %s: current payment environment, test or live. */
         echo '<p>' . esc_html(sprintf(__('Current mode: %s', 'donation-box'), $mode)) . '</p>';
         $table = Donation_Box_Store::table('payments');
-        $totals = $wpdb->get_results($wpdb->prepare("SELECT currency, SUM(amount - refunded_amount) AS total, COUNT(*) AS count FROM $table WHERE status IN ('paid','refunded','partially_refunded') AND mode = %s GROUP BY currency", $mode));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $totals = $wpdb->get_results($wpdb->prepare("SELECT currency, SUM(amount - refunded_amount) AS total, COUNT(*) AS count FROM %i WHERE status IN ('paid','refunded','partially_refunded') AND mode = %s GROUP BY currency", $table, $mode));
         foreach ($totals as $total) { echo '<p><strong>' . esc_html(Donation_Box_Frontend::money($total->total, $total->currency)) . '</strong> · ' . esc_html($total->count) . ' ' . esc_html__('confirmed donations', 'donation-box') . '</p>'; }
         if (!$totals) { echo '<p>' . esc_html__('No confirmed donations yet.', 'donation-box') . '</p>'; }
         echo '<p>' . esc_html__('Totals show confirmed donations minus full and partial refunds, grouped by currency.', 'donation-box') . '</p>';
@@ -38,9 +40,10 @@ final class Donation_Box_Admin {
         <?php endforeach; ?>
         <tr><th><label for="dbox-currency"><?php esc_html_e('Currency', 'donation-box'); ?></label></th><td><select id="dbox-currency" name="donation_box_settings[currency]">
         <?php foreach (['eur', 'usd', 'gbp'] as $currency): ?><option value="<?php echo esc_attr($currency); ?>" <?php selected($s['currency'], $currency); ?>><?php echo esc_html(strtoupper($currency)); ?></option><?php endforeach; ?></select></td></tr></table>
-        <h2><?php esc_html_e('Colors', 'donation-box'); ?></h2><p><?php esc_html_e('Defaults match the ABAM website. Change these to match any theme.', 'donation-box'); ?></p>
+        <h2><?php esc_html_e('Colors', 'donation-box'); ?></h2><p><?php esc_html_e('Choose colors to match your website.', 'donation-box'); ?></p>
         <table class="form-table" role="presentation">
         <?php foreach (Donation_Box_Settings::colors() as $key => $color): ?>
+        <?php /* translators: %s: default hexadecimal colour value. */ ?>
         <tr><th><label for="dbox-<?php echo esc_attr($key); ?>"><?php echo esc_html($color[0]); ?></label></th><td><input type="color" id="dbox-<?php echo esc_attr($key); ?>" name="donation_box_settings[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($s[$key]); ?>"> <code><?php echo esc_html($s[$key]); ?></code> <span class="description"><?php echo esc_html(sprintf(__('Default: %s', 'donation-box'), $color[1])); ?></span></td></tr>
         <?php endforeach; ?></table>
         <h2><?php esc_html_e('Stripe', 'donation-box'); ?></h2>
@@ -62,8 +65,8 @@ final class Donation_Box_Admin {
         <?php submit_button(); ?></form></div><?php
     }
     private static function filters(string $page): array {
-        $mode = ($_GET['mode'] ?? Donation_Box_Settings::get()['mode']) === 'live' ? 'live' : 'test';
-        $status = sanitize_key($_GET['status'] ?? ''); $search = sanitize_text_field(wp_unslash($_GET['search'] ?? ''));
+        $mode = sanitize_key(Donation_Box_Settings::query_value('mode', Donation_Box_Settings::get()['mode'])) === 'live' ? 'live' : 'test';
+        $status = sanitize_key(Donation_Box_Settings::query_value('status', '')); $search = sanitize_text_field(Donation_Box_Settings::query_value('search', ''));
         echo '<form method="get"><input type="hidden" name="page" value="' . esc_attr($page) . '"><p><label>' . esc_html__('Mode', 'donation-box') . ' <select name="mode">';
         foreach (['test', 'live'] as $value) { echo '<option value="' . esc_attr($value) . '" ' . selected($mode, $value, false) . '>' . esc_html($value) . '</option>'; }
         echo '</select></label> <label>' . esc_html__('Status', 'donation-box') . ' <input name="status" value="' . esc_attr($status) . '"></label> <label>' . esc_html__('Email', 'donation-box') . ' <input name="search" value="' . esc_attr($search) . '"></label> <button class="button">' . esc_html__('Filter', 'donation-box') . '</button></p></form>';
@@ -74,12 +77,12 @@ final class Donation_Box_Admin {
     private static function listing(string $kind): void {
         global $wpdb; self::start($kind === 'payments' ? __('Payments', 'donation-box') : __('Subscriptions', 'donation-box'));
         [$mode, $status, $search] = self::filters('donation-box-' . $kind);
-        $where = $wpdb->prepare('mode = %s', $mode);
-        if ($status) { $where .= $wpdb->prepare(' AND status = %s', $status); }
-        if ($search) { $where .= $wpdb->prepare(' AND email LIKE %s', '%' . $wpdb->esc_like($search) . '%'); }
-        $page = max(1, absint($_GET['paged'] ?? 1)); $table = Donation_Box_Store::table($kind);
-        $count = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE $where");
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE $where ORDER BY id DESC LIMIT 25 OFFSET %d", ($page - 1) * 25));
+        $email_pattern = '%' . $wpdb->esc_like($search) . '%';
+        $page = max(1, absint(Donation_Box_Settings::query_value('paged', '1'))); $table = Donation_Box_Store::table($kind);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM %i WHERE mode = %s AND (%s = '' OR status = %s) AND email LIKE %s", $table, $mode, $status, $status, $email_pattern));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM %i WHERE mode = %s AND (%s = '' OR status = %s) AND email LIKE %s ORDER BY id DESC LIMIT 25 OFFSET %d", $table, $mode, $status, $status, $email_pattern, ($page - 1) * 25));
         echo '<p><a class="button" href="' . esc_url(wp_nonce_url(add_query_arg(['action' => 'donation_box_export', 'kind' => $kind, 'mode' => $mode, 'status' => $status, 'search' => $search], admin_url('admin-post.php')), 'donation_box_export')) . '">' . esc_html__('Export filtered CSV', 'donation-box') . '</a></p>';
         echo '<table class="widefat striped"><thead><tr>';
         foreach ([__('Email', 'donation-box'), __('Amount', 'donation-box'), __('Status', 'donation-box'), __('Date (UTC)', 'donation-box'), __('Stripe', 'donation-box')] as $heading) { echo '<th>' . esc_html($heading) . '</th>'; }
@@ -103,11 +106,12 @@ final class Donation_Box_Admin {
         global $wpdb; self::start(__('Donors', 'donation-box'));
         [$mode, $status, $search] = self::filters('donation-box-donors');
         $table = Donation_Box_Store::table('payments');
-        $where = $wpdb->prepare("mode = %s AND status IN ('paid','refunded','partially_refunded') AND email LIKE %s", $mode, '%' . $wpdb->esc_like($search) . '%');
-        if ($status) { $where .= $wpdb->prepare(' AND status = %s', $status); }
-        $page = max(1, absint($_GET['paged'] ?? 1));
-        $count = (int) $wpdb->get_var("SELECT COUNT(DISTINCT email) FROM $table WHERE $where");
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT email, MAX(user_id) AS user_id, COUNT(*) AS donations FROM $table WHERE $where GROUP BY email ORDER BY email LIMIT 25 OFFSET %d", ($page - 1) * 25));
+        $email_pattern = '%' . $wpdb->esc_like($search) . '%';
+        $page = max(1, absint(Donation_Box_Settings::query_value('paged', '1')));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(DISTINCT email) FROM %i WHERE mode = %s AND status IN ('paid','refunded','partially_refunded') AND (%s = '' OR status = %s) AND email LIKE %s", $table, $mode, $status, $status, $email_pattern));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT email, MAX(user_id) AS user_id, COUNT(*) AS donations FROM %i WHERE mode = %s AND status IN ('paid','refunded','partially_refunded') AND (%s = '' OR status = %s) AND email LIKE %s GROUP BY email ORDER BY email LIMIT 25 OFFSET %d", $table, $mode, $status, $status, $email_pattern, ($page - 1) * 25));
         echo '<table class="widefat striped"><thead><tr><th>' . esc_html__('Email', 'donation-box') . '</th><th>' . esc_html__('WordPress user', 'donation-box') . '</th><th>' . esc_html__('Donations', 'donation-box') . '</th></tr></thead><tbody>';
         foreach ($rows as $row) {
             echo '<tr><td>' . esc_html($row->email) . '</td><td>';
@@ -123,21 +127,21 @@ final class Donation_Box_Admin {
     }
     public static function export(): void {
         self::guard(); check_admin_referer('donation_box_export'); global $wpdb;
-        $kind = ($_GET['kind'] ?? '') === 'subscriptions' ? 'subscriptions' : 'payments';
-        $mode = ($_GET['mode'] ?? '') === 'live' ? 'live' : 'test';
-        $status = sanitize_key($_GET['status'] ?? ''); $search = sanitize_text_field(wp_unslash($_GET['search'] ?? ''));
-        $where = $wpdb->prepare('mode = %s', $mode);
-        if ($status) { $where .= $wpdb->prepare(' AND status = %s', $status); }
-        if ($search) { $where .= $wpdb->prepare(' AND email LIKE %s', '%' . $wpdb->esc_like($search) . '%'); }
+        $kind = sanitize_key(Donation_Box_Settings::query_value('kind', '')) === 'subscriptions' ? 'subscriptions' : 'payments';
+        $mode = sanitize_key(Donation_Box_Settings::query_value('mode', '')) === 'live' ? 'live' : 'test';
+        $status = sanitize_key(Donation_Box_Settings::query_value('status', '')); $search = sanitize_text_field(Donation_Box_Settings::query_value('search', ''));
+        $email_pattern = '%' . $wpdb->esc_like($search) . '%';
         nocache_headers(); header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="donation-box-' . $kind . '-' . $mode . '.csv"');
         $stream = fopen('php://output', 'w'); $last = 0; $header = false;
         do {
-            $rows = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . Donation_Box_Store::table($kind) . " WHERE $where AND id > %d ORDER BY id LIMIT 500", $last), ARRAY_A);
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+            $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM %i WHERE mode = %s AND (%s = '' OR status = %s) AND email LIKE %s AND id > %d ORDER BY id LIMIT 500", Donation_Box_Store::table($kind), $mode, $status, $status, $email_pattern, $last), ARRAY_A);
             foreach ($rows as $row) {
                 if (!$header) { fputcsv($stream, array_keys($row), ',', '"', ''); $header = true; }
                 fputcsv($stream, array_map([self::class, 'csv_cell'], $row), ',', '"', ''); $last = (int) $row['id'];
             }
         } while (count($rows) === 500);
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closes the HTTP output stream, not a filesystem file.
         fclose($stream); exit;
     }
 }

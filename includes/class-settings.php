@@ -10,6 +10,14 @@ final class Donation_Box_Settings {
             'test_key' => '', 'live_key' => '', 'test_webhook' => '', 'live_webhook' => '',
         ]);
     }
+    /** Read a display-only URL filter; no data is changed by these values. */
+    public static function query_value(string $key, string $default = ''): string {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only display/pagination filters; privileged actions have separate nonce checks.
+        if (!isset($_GET[$key]) || !is_scalar($_GET[$key])) { return $default; }
+        $value = sanitize_text_field(wp_unslash($_GET[$key]));
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        return $value;
+    }
     public static function colors(): array {
         return [
             'color_primary' => [__('Primary / buttons', 'donation-box'), '#0071DC'],

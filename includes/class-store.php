@@ -1,7 +1,13 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 final class Donation_Box_Store {
-    public static function table(string $name): string { global $wpdb; return $wpdb->prefix . 'donation_box_' . $name; }
+    public static function table(string $name): string {
+        if (!in_array($name, ['payments', 'subscriptions', 'events'], true)) {
+            throw new InvalidArgumentException('Unknown Donation Box table');
+        }
+        global $wpdb;
+        return $wpdb->prefix . 'donation_box_' . $name;
+    }
     public static function install(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -61,14 +67,17 @@ final class Donation_Box_Store {
     }
     public static function find(string $reference): ?object {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('payments') . ' WHERE reference = %s', $reference));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        return $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE reference = %s', self::table('payments'), $reference));
     }
     public static function update(int $id, array $data): void {
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         if ($wpdb->update(self::table('payments'), $data, ['id' => $id]) === false) { throw new RuntimeException('Database update failed'); }
     }
     public static function insert(array $data): int {
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         if (!$wpdb->insert(self::table('payments'), $data)) { throw new RuntimeException('Database insert failed'); }
         return (int) $wpdb->insert_id;
     }

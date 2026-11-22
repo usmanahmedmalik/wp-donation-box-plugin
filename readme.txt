@@ -2,8 +2,9 @@
 Contributors: usmanahmedmalik
 Tags: donations, stripe, recurring donations, fundraising
 Requires at least: 6.6
+Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.4
+Stable tag: 0.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,10 +72,13 @@ Issue refunds in Stripe. Supported webhook events update the local donation reco
 No. Records and saved settings are retained. Removing the plugin also does not cancel subscriptions at Stripe.
 
 == Changelog ==
+= 0.1.5 =
+Prepare SQL identifiers and filter values, sanitise URL/server input, document read-only queries, add translator context and update compatibility metadata. Settings and donation records are preserved.
+
 
 = 0.1.4 =
 Removed the temporary testing webhook URL field from settings. Use the standard test and live webhook URLs.
-= 0.1.4 =
+= 0.1.3 =
 Fetch fresh anonymous checkout tokens outside the page cache to fix logged-in tester and expired cached-form nonce failures. Add safe browser-console HTTP status/error-code diagnostics.
 
 = 0.1.2 =

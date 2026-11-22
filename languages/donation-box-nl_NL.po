@@ -46,6 +46,9 @@ msgstr "Het afrekenen is geannuleerd. U kunt het opnieuw proberen wanneer u wilt
 msgid "Choose an amount between 1 and 99,999.99."
 msgstr "Kies een bedrag tussen 1 en 99.999,99."
 
+msgid "Choose colors to match your website."
+msgstr "Kies kleuren die bij je website passen."
+
 msgid "Choose your amount"
 msgstr "Kies uw bedrag"
 
@@ -81,9 +84,6 @@ msgstr "Datum (UTC)"
 
 msgid "Default: %s"
 msgstr "Standaard: %s"
-
-msgid "Defaults match the ABAM website. Change these to match any theme."
-msgstr "De standaardkleuren komen overeen met de ABAM-website. Pas ze aan uw thema aan."
 
 msgid "Description"
 msgstr "Beschrijving"

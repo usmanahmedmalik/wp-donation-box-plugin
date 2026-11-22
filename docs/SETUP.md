@@ -117,6 +117,7 @@ Amounts and currencies on recurring invoices must match the original recurring d
 ```sh
 php tests/run.php
 php tests/render.php
+php tests/reporting.php
 php tests/isolation.php
 php tests/routing.php
 php tests/run.php --temporary-webhook

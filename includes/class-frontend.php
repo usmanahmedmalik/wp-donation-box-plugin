@@ -25,7 +25,7 @@ final class Donation_Box_Frontend {
             <?php if ($s['mode'] === 'test'): ?><p class="dbox-badge"><?php esc_html_e('Test mode — no real payments', 'donation-box'); ?></p><?php endif; ?>
             <h2 id="<?php echo esc_attr($id); ?>title"><?php echo esc_html($s['title']); ?></h2>
             <p class="dbox-description"><?php echo esc_html($s['description']); ?></p>
-            <?php $result = sanitize_key($_GET['donation_box'] ?? '');
+            <?php $result = sanitize_key(Donation_Box_Settings::query_value('donation_box', ''));
             if ($result === 'received'): ?><p role="status" class="dbox-notice"><?php esc_html_e('Thank you. Your payment is being confirmed. It will appear in your account once confirmation arrives.', 'donation-box'); ?></p>
             <?php elseif ($result === 'cancelled'): ?><p role="status" class="dbox-notice"><?php esc_html_e('Checkout was cancelled. You can try again whenever you are ready.', 'donation-box'); ?></p><?php endif; ?>
             <form class="dbox-form" data-endpoint="<?php echo esc_url(rest_url('donation-box/v1/checkout')); ?>" data-token-endpoint="<?php echo esc_url(rest_url('donation-box/v1/checkout-token')); ?>">
@@ -38,6 +38,7 @@ final class Donation_Box_Frontend {
                     <?php foreach (explode(',', $s['amounts']) as $amount): ?>
                         <button type="button" data-amount="<?php echo esc_attr($amount); ?>" aria-pressed="false"><?php echo esc_html(self::money(Donation_Box_Stripe::amount($amount), $s['currency'])); ?></button>
                     <?php endforeach; ?></div></fieldset>
+                    <?php /* translators: %s: three-letter currency code, for example EUR. */ ?>
                     <label for="<?php echo esc_attr($id); ?>amount"><?php echo esc_html(sprintf(__('Amount (%s)', 'donation-box'), strtoupper($s['currency']))); ?></label>
                     <input id="<?php echo esc_attr($id); ?>amount" name="amount" type="number" min="1" max="99999.99" step="0.01" inputmode="decimal" placeholder="25.00" required>
                     <button type="button" class="dbox-primary" data-next><?php esc_html_e('Continue', 'donation-box'); ?> <span aria-hidden="true">→</span></button>
@@ -68,10 +69,12 @@ final class Donation_Box_Frontend {
         if (!is_user_logged_in()) { return '<p><a href="' . esc_url(wp_login_url(get_permalink())) . '">' . esc_html__('Log in to view your donations', 'donation-box') . '</a></p>'; }
         global $wpdb;
         $mode = Donation_Box_Settings::get()['mode'];
-        $page = max(1, absint($_GET['donation_page'] ?? 1)); $offset = ($page - 1) * 20;
+        $page = max(1, absint(Donation_Box_Settings::query_value('donation_page', '1'))); $offset = ($page - 1) * 20;
         $table = Donation_Box_Store::table('payments');
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE user_id = %d AND mode = %s ORDER BY id DESC LIMIT 21 OFFSET %d", get_current_user_id(), $mode, $offset));
-        $customers = $wpdb->get_col($wpdb->prepare("SELECT DISTINCT customer_id FROM $table WHERE user_id = %d AND mode = %s AND status IN ('paid','refunded','partially_refunded') AND customer_id <> ''", get_current_user_id(), $mode));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM %i WHERE user_id = %d AND mode = %s ORDER BY id DESC LIMIT 21 OFFSET %d", $table, get_current_user_id(), $mode, $offset));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
+        $customers = $wpdb->get_col($wpdb->prepare("SELECT DISTINCT customer_id FROM %i WHERE user_id = %d AND mode = %s AND status IN ('paid','refunded','partially_refunded') AND customer_id <> ''", $table, get_current_user_id(), $mode));
         ob_start(); ?>
         <section class="donation-box dbox-account" style="<?php echo esc_attr(Donation_Box_Settings::color_style()); ?>"><h2><?php esc_html_e('My donations', 'donation-box'); ?></h2>
         <?php if (!$rows): ?><p><?php esc_html_e('No donations yet.', 'donation-box'); ?></p><?php else: ?>
@@ -82,6 +85,7 @@ final class Donation_Box_Frontend {
         <?php if (count($rows) > 20): ?><a href="<?php echo esc_url(add_query_arg('donation_page', $page + 1)); ?>"><?php esc_html_e('Next', 'donation-box'); ?></a><?php endif; ?>
         <?php endif; ?>
         <?php foreach ($customers as $i => $customer): ?>
+        <?php /* translators: %d: number identifying a donor's Stripe customer account. */ ?>
         <button type="button" class="dbox-portal dbox-primary" data-endpoint="<?php echo esc_url(rest_url('donation-box/v1/portal')); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('wp_rest')); ?>" data-customer="<?php echo esc_attr($customer); ?>"><?php echo esc_html(sprintf(__('Manage payments and subscriptions (%d)', 'donation-box'), $i + 1)); ?></button>
         <?php endforeach; ?><p class="dbox-error" role="alert"></p></section>
         <?php return ob_get_clean();

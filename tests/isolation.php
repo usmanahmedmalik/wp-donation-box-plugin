@@ -11,7 +11,7 @@ function wp_register_style($handle, ...$args) { $GLOBALS['registered_assets']['s
 function wp_register_script($handle, ...$args) { $GLOBALS['registered_assets']['script'][] = $handle; }
 // Deliberately no enqueue, HTTP, email, login or site-settings mutation stubs here.
 $GLOBALS['wpdb'] = new TestDB();
-$GLOBALS['options'] = ['donation_box_db_version' => '0.1.4', 'blogname' => 'Original site', 'default_role' => 'administrator'];
+$GLOBALS['options'] = ['donation_box_db_version' => '0.1.5', 'blogname' => 'Original site', 'default_role' => 'administrator'];
 $GLOBALS['users'] = [(object) ['ID' => 1, 'user_email' => 'existing@example.test', 'role' => 'administrator']];
 $GLOBALS['http_calls'] = []; $GLOBALS['notifications'] = [];
 $before_options = $GLOBALS['options']; $before_users = $GLOBALS['users'];

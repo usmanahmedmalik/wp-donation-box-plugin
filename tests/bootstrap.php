@@ -28,6 +28,7 @@ function __($text, $domain = '') { return $text; }
 function is_wp_error($value) { return $value instanceof WP_Error; }
 function wp_parse_args($args, $defaults) { return array_merge($defaults, $args); }
 function get_option($name, $default = false) { return $GLOBALS['options'][$name] ?? $default; }
+function wp_unslash($value) { return is_array($value) ? array_map('wp_unslash', $value) : (is_string($value) ? stripslashes($value) : $value); }
 function sanitize_text_field($value) { return is_scalar($value) ? trim(strip_tags((string) $value)) : ''; }
 function sanitize_email($value) { return filter_var($value, FILTER_SANITIZE_EMAIL); }
 function is_email($value) { return filter_var($value, FILTER_VALIDATE_EMAIL); }
@@ -48,7 +49,7 @@ function remove_query_arg($keys, $url) {
     foreach ((array) $keys as $key) { unset($q[$key]); }
     return $p['scheme'] . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '') . ($p['path'] ?? '/') . ($q ? '?' . http_build_query($q) : '');
 }
-function add_query_arg($key, $value, $url) { return $url . (str_contains($url, '?') ? '&' : '?') . urlencode($key) . '=' . urlencode($value); }
+function add_query_arg($key, $value = '', $url = '') { if (is_array($key)) { return $value . '?' . http_build_query($key); } if ($url === '') { $url = 'https://example.test/donations'; } return $url . (str_contains($url, '?') ? '&' : '?') . urlencode($key) . '=' . urlencode($value); }
 function current_time($type, $gmt = false) { return gmdate('Y-m-d H:i:s'); }
 function wp_generate_uuid4() { return sprintf('%08x-1234-4321-8123-%012x', ++$GLOBALS['uuid'], $GLOBALS['uuid']); }
 function wp_generate_password(...$args) { return 'random-password-not-exposed'; }
@@ -82,8 +83,11 @@ class TestDB {
         ); CREATE TABLE wp_donation_box_events (event_id TEXT PRIMARY KEY, processed_at TEXT)");
     }
     public function prepare($sql, ...$values) {
-        $i = 0; return preg_replace_callback('/%[sd]/', function ($m) use (&$i, $values) { $v = $values[$i++]; return $m[0] === '%d' ? (string) (int) $v : $this->pdo->quote((string) $v); }, $sql);
+        $i = 0; return preg_replace_callback('/%[sdi]/', function ($m) use (&$i, $values) { $v = $values[$i++]; if ($m[0] === '%i') { return '`' . str_replace('`', '``', (string) $v) . '`'; } return $m[0] === '%d' ? (string) (int) $v : $this->pdo->quote((string) $v); }, $sql);
     }
+    public function esc_like($value) { return addcslashes($value, '_%\\'); }
+    public function get_results($sql, $output = null) { return $this->pdo->query($sql)->fetchAll($output === ARRAY_A ? PDO::FETCH_ASSOC : PDO::FETCH_OBJ); }
+    public function get_col($sql) { return $this->pdo->query($sql)->fetchAll(PDO::FETCH_COLUMN); }
     public function get_row($sql) { return $this->pdo->query($sql)->fetchObject() ?: null; }
     public function get_var($sql) { if (str_contains($sql, 'GET_LOCK') || str_contains($sql, 'RELEASE_LOCK')) { return 1; } return $this->pdo->query($sql)->fetchColumn(); }
     public function query($sql) { return $this->pdo->exec($sql); }
