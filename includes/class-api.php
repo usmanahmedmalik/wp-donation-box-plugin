@@ -27,19 +27,19 @@ final class Donation_Box_API {
     }
     public static function checkout(WP_REST_Request $request) {
         if (!wp_verify_nonce($request->get_header('X-Donation-Box-Nonce'), 'donation_box_checkout')) {
-            return new WP_Error('nonce', __('Refresh the page and try again.', 'donation-box'), ['status' => 403]);
+            return new WP_Error('nonce', __('Refresh the page and try again.', 'pledgly-donations'), ['status' => 403]);
         }
         $input = $request->get_json_params();
-        if (!is_array($input) || !empty($input['website'])) { return new WP_Error('input', __('Unable to start checkout.', 'donation-box'), ['status' => 400]); }
+        if (!is_array($input) || !empty($input['website'])) { return new WP_Error('input', __('Unable to start checkout.', 'pledgly-donations'), ['status' => 400]); }
         foreach (['amount', 'email', 'first_name', 'last_name', 'phone', 'frequency', 'return_url', 'website'] as $field) {
             if (isset($input[$field]) && !is_string($input[$field]) && !($field === 'amount' && is_numeric($input[$field]))) {
-                return new WP_Error('input', __('Unable to start checkout.', 'donation-box'), ['status' => 400]);
+                return new WP_Error('input', __('Unable to start checkout.', 'pledgly-donations'), ['status' => 400]);
             }
         }
         // Use the direct peer address; never trust a visitor-supplied forwarding header.
         $bucket = 'donation_box_rate_' . hash_hmac('sha256', sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'] ?? 'unknown')), wp_salt('nonce'));
         $attempts = (int) get_transient($bucket);
-        if ($attempts >= 10) { return new WP_Error('rate_limit', __('Please wait a few minutes before trying again.', 'donation-box'), ['status' => 429]); }
+        if ($attempts >= 10) { return new WP_Error('rate_limit', __('Please wait a few minutes before trying again.', 'pledgly-donations'), ['status' => 429]); }
         set_transient($bucket, $attempts + 1, 10 * MINUTE_IN_SECONDS);
         $amount = Donation_Box_Stripe::amount($input['amount'] ?? '');
         if (is_wp_error($amount)) { return $amount; }
@@ -49,13 +49,13 @@ final class Donation_Box_API {
         $phone = sanitize_text_field($input['phone'] ?? '');
         $frequency = $input['frequency'] ?? '';
         if (!is_email($email) || strlen($email) > 191 || !$first || !$last || strlen($first) > 100 || strlen($last) > 100 || strlen($phone) > 50 || !in_array($frequency, ['once', 'monthly'], true) || empty($input['consent'])) {
-            return new WP_Error('input', __('Check your name, email and consent.', 'donation-box'), ['status' => 400]);
+            return new WP_Error('input', __('Check your name, email and consent.', 'pledgly-donations'), ['status' => 400]);
         }
         $settings = Donation_Box_Settings::get(); $mode = $settings['mode'];
         if (!Donation_Box_Settings::secret($mode) || !Donation_Box_Settings::secret($mode, 'webhook')) {
-            return new WP_Error('configuration', __('Donations are not available yet. Please contact the site administrator.', 'donation-box'), ['status' => 503]);
+            return new WP_Error('configuration', __('Donations are not available yet. Please contact the site administrator.', 'pledgly-donations'), ['status' => 503]);
         }
-        if ($mode === 'live' && !is_ssl()) { return new WP_Error('https', __('Secure HTTPS is required for live donations.', 'donation-box'), ['status' => 503]); }
+        if ($mode === 'live' && !is_ssl()) { return new WP_Error('https', __('Secure HTTPS is required for live donations.', 'pledgly-donations'), ['status' => 503]); }
         $reference = wp_generate_uuid4(); $id = 0;
         try {
             $id = Donation_Box_Store::insert([
@@ -84,7 +84,7 @@ final class Donation_Box_API {
         } catch (Throwable $e) {
             // Do not log donor details, keys, or raw Stripe responses.
             if ($id) { Donation_Box_Store::update($id, ['status' => 'checkout_error']); }
-            return new WP_Error('stripe', __('Unable to connect to Stripe. Please try again later.', 'donation-box'), ['status' => 502]);
+            return new WP_Error('stripe', __('Unable to connect to Stripe. Please try again later.', 'pledgly-donations'), ['status' => 502]);
         }
     }
     public static function return_url(string $value): string {
@@ -100,11 +100,11 @@ final class Donation_Box_API {
         $customer = sanitize_text_field($request->get_param('customer_id') ?? '');
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned financial tables require current state for reporting, ownership and webhook processing.
         $owned = $wpdb->get_var($wpdb->prepare("SELECT customer_id FROM %i WHERE user_id = %d AND mode = %s AND status IN ('paid','refunded','partially_refunded') AND customer_id = %s LIMIT 1", Donation_Box_Store::table('payments'), get_current_user_id(), $mode, $customer));
-        if (!$owned) { return new WP_Error('customer', __('No matching donor account.', 'donation-box'), ['status' => 404]); }
+        if (!$owned) { return new WP_Error('customer', __('No matching donor account.', 'pledgly-donations'), ['status' => 404]); }
         try {
             $session = Donation_Box_Stripe::request($mode, 'billing_portal/sessions', ['customer' => $owned, 'return_url' => self::return_url((string) $request->get_param('return_url'))]);
             return ['url' => Donation_Box_Stripe::url($session, 'billing.stripe.com')];
-        } catch (Throwable $e) { return new WP_Error('stripe', __('The donor portal is unavailable. Please contact the site administrator.', 'donation-box'), ['status' => 502]); }
+        } catch (Throwable $e) { return new WP_Error('stripe', __('The donor portal is unavailable. Please contact the site administrator.', 'pledgly-donations'), ['status' => 502]); }
     }
     public static function webhook(WP_REST_Request $request) {
         global $wpdb;

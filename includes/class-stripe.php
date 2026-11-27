@@ -5,11 +5,11 @@ final class Donation_Box_Stripe {
     public const API_VERSION = '2024-06-20';
     public static function amount($value) {
         if (!is_scalar($value) || !preg_match('/^\d{1,5}(?:[.,]\d{1,2})?$/D', (string) $value)) {
-            return new WP_Error('amount', __('Enter an amount with at most two decimal places.', 'donation-box'), ['status' => 400]);
+            return new WP_Error('amount', __('Enter an amount with at most two decimal places.', 'pledgly-donations'), ['status' => 400]);
         }
         $parts = explode('.', str_replace(',', '.', (string) $value));
         $cents = (int) $parts[0] * 100 + (int) str_pad($parts[1] ?? '', 2, '0');
-        if ($cents < 100 || $cents > 9999999) { return new WP_Error('amount', __('Choose an amount between 1 and 99,999.99.', 'donation-box'), ['status' => 400]); }
+        if ($cents < 100 || $cents > 9999999) { return new WP_Error('amount', __('Choose an amount between 1 and 99,999.99.', 'pledgly-donations'), ['status' => 400]); }
         return $cents;
     }
     public static function request(string $mode, string $path, array $data = [], string $method = 'POST', string $idempotency = ''): array {

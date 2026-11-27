@@ -3,20 +3,19 @@ require __DIR__ . '/bootstrap.php';
 $GLOBALS['actions'] = []; $GLOBALS['shortcodes'] = []; $GLOBALS['registered_assets'] = [];
 function add_action($hook, $callback, ...$args) { $GLOBALS['actions'][$hook][] = $callback; }
 function register_activation_hook($file, $callback) { $GLOBALS['activation'] = $callback; }
-function load_plugin_textdomain(...$args) {}
-function plugin_basename($file) { return 'donation-box/' . basename($file); }
-function plugins_url($path, $file) { return 'https://example.test/wp-content/plugins/donation-box/' . $path; }
+function plugins_url($path, $file) { return 'https://example.test/wp-content/plugins/pledgly-donations/' . $path; }
 function add_shortcode($tag, $callback) { $GLOBALS['shortcodes'][$tag] = $callback; }
 function wp_register_style($handle, ...$args) { $GLOBALS['registered_assets']['style'][] = $handle; }
 function wp_register_script($handle, ...$args) { $GLOBALS['registered_assets']['script'][] = $handle; }
 // Deliberately no enqueue, HTTP, email, login or site-settings mutation stubs here.
+$component = 'value from another plugin';
+ob_start();
+require __DIR__ . '/../pledgly-donations.php';
 $GLOBALS['wpdb'] = new TestDB();
-$GLOBALS['options'] = ['donation_box_db_version' => '0.1.5', 'blogname' => 'Original site', 'default_role' => 'administrator'];
+$GLOBALS['options'] = ['donation_box_db_version' => DONATION_BOX_VERSION, 'blogname' => 'Original site', 'default_role' => 'administrator'];
 $GLOBALS['users'] = [(object) ['ID' => 1, 'user_email' => 'existing@example.test', 'role' => 'administrator']];
 $GLOBALS['http_calls'] = []; $GLOBALS['notifications'] = [];
 $before_options = $GLOBALS['options']; $before_users = $GLOBALS['users'];
-$component = 'value from another plugin';
-ob_start(); require __DIR__ . '/../donation-box.php';
 foreach ($GLOBALS['actions']['plugins_loaded'] as $callback) { $callback(); }
 foreach ($GLOBALS['actions']['wp_enqueue_scripts'] as $callback) { $callback(); }
 $output = ob_get_clean();

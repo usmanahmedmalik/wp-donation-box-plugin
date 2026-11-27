@@ -31,17 +31,15 @@ security checks for whole files:
   checkout, and portal actions retain their separate protections.
 - CSV export closes `php://output`, an HTTP response stream, rather than a
   filesystem file requiring the WordPress filesystem abstraction.
-- Explicit translation loading remains necessary for the bundled Dutch
-  catalogue on GitHub ZIP installations outside the WordPress.org directory.
 
 ## Recheck a release
 
 1. Run the regression commands in the README and build the ZIP.
 2. Install that ZIP on a local or staging WordPress site.
-3. Run **Tools → Plugin Check** for Donation Box with the default checks, or:
+3. Run **Tools → Plugin Check** for Pledgly Donations with the default checks, or:
 
    ```sh
-   wp plugin check donation-box --format=json
+   wp plugin check pledgly-donations --format=json
    ```
 
 For runtime checks through WP-CLI, follow Plugin Check's instructions for

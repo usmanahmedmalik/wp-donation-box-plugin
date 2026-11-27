@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Build POT, Dutch PO and GNU MO catalogs. No external dependencies."""
+"""Build the POT template and Dutch PO catalog for translation contributions. No external dependencies."""
 from pathlib import Path
 import json
 import re
-import struct
 
 root = Path(__file__).resolve().parent.parent
 # Source strings and Dutch translations, separated by a tab.
@@ -40,8 +39,8 @@ Default: %s	Standaard: %s
 Defaults match the ABAM website. Change these to match any theme.	De standaardkleuren komen overeen met de ABAM-website. Pas ze aan uw thema aan.
 Description	Beschrijving
 Donate securely	Veilig doneren
-Donation Box	Donation Box
-Donation Box settings	Donation Box-instellingen
+Pledgly Donations	Pledgly Donations
+Pledgly Donations settings	Instellingen voor Pledgly Donations
 Donation form	Donatieformulier
 Donations	Donaties
 Donations are not available yet. Please contact the site administrator.	Doneren is nog niet beschikbaar. Neem contact op met de websitebeheerder.
@@ -117,29 +116,17 @@ Unable to connect. Please try again.	Kan geen verbinding maken. Probeer het opni
 Invalid payment redirect.	Ongeldige doorverwijzing naar de betaalpagina.'''
 translations = dict(line.split('\t', 1) for line in source.splitlines())
 strings = set()
-for path in [root / 'donation-box.php', *(root / 'includes').glob('*.php')]:
-    strings.update(re.findall(r"(?:__|esc_html__|esc_attr__|esc_html_e|esc_attr_e)\(\s*'([^']*)'\s*,\s*'donation-box'", path.read_text()))
+for path in [root / 'pledgly-donations.php', *(root / 'includes').glob('*.php')]:
+    strings.update(re.findall(r"(?:__|esc_html__|esc_attr__|esc_html_e|esc_attr_e)\(\s*'([^']*)'\s*,\s*'pledgly-donations'", path.read_text()))
 missing = strings - translations.keys()
 if missing:
     raise SystemExit('Missing Dutch translations: ' + repr(sorted(missing)))
-header = 'Project-Id-Version: Donation Box 0.1.3\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: nl_NL\nPlural-Forms: nplurals=2; plural=(n != 1);\n'
+header = 'Project-Id-Version: Pledgly Donations\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: nl_NL\nPlural-Forms: nplurals=2; plural=(n != 1);\n'
 quote = lambda s: json.dumps(s, ensure_ascii=False)
 for language in ['nl_NL', '']:
     entries = {'': header if language else header.replace('Language: nl_NL\n', '')}
     entries.update({key: translations[key] if language else '' for key in sorted(strings)})
     po = '\n\n'.join('msgid ' + quote(key) + '\nmsgstr ' + quote(value) for key, value in entries.items()) + '\n'
-    name = 'donation-box-' + language if language else 'donation-box'
+    name = 'pledgly-donations-' + language if language else 'pledgly-donations'
     (root / 'languages' / (name + ('.po' if language else '.pot'))).write_text(po)
-    if not language:
-        continue
-    items = sorted((k.encode(), v.encode()) for k, v in entries.items())
-    n = len(items); start = 28 + n * 16
-    keys = b''; values = b''; key_table = []; value_table = []
-    for key, _ in items:
-        key_table.extend([len(key), start + len(keys)]); keys += key + b'\0'
-    for _, value in items:
-        value_table.extend([len(value), start + len(keys) + len(values)]); values += value + b'\0'
-    output = struct.pack('<7I', 0x950412de, 0, n, 28, 28 + n * 8, 0, 0)
-    output += struct.pack('<' + 'I' * (4 * n), *(key_table + value_table)) + keys + values
-    (root / 'languages' / (name + '.mo')).write_bytes(output)
 print(f'Built template and Dutch catalog: {len(strings)} strings.')

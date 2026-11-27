@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/bootstrap.php';
-define('DONATION_BOX_FILE', dirname(__DIR__) . '/donation-box.php');
+define('DONATION_BOX_FILE', dirname(__DIR__) . '/pledgly-donations.php');
 function esc_attr($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
 function esc_html($value) { return esc_attr($value); }
 function esc_url($value) { return esc_attr($value); }
@@ -67,7 +67,7 @@ if (in_array('--preview', $argv, true)) {
     $css = file_get_contents(__DIR__ . '/../assets/donation-box.css');
     $js = file_get_contents(__DIR__ . '/../assets/donation-box.js');
     $config = json_encode($GLOBALS['localized']['DonationBoxI18n']);
-    file_put_contents('/tmp/donation-box-preview.html', '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Donation Box preview</title><style>body{margin:0;background:#f7f8fa;padding:20px}' . $css . '</style><body>' . $one . '<script>window.DonationBoxI18n=' . $config . ';</script><script>' . $js . '</script></body></html>');
+    file_put_contents('/tmp/donation-box-preview.html', '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pledgly Donations preview</title><style>body{margin:0;background:#f7f8fa;padding:20px}' . $css . '</style><body>' . $one . '<script>window.DonationBoxI18n=' . $config . ';</script><script>' . $js . '</script></body></html>');
     echo "Preview: /tmp/donation-box-preview.html\n";
 }
 echo "Passed $checks render assertions.\n";

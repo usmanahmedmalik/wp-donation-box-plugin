@@ -1,17 +1,17 @@
-=== Donation Box ===
+=== Pledgly Donations ===
 Contributors: usmanahmedmalik
 Tags: donations, stripe, recurring donations, fundraising
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 One-time and monthly donations with Stripe Checkout, configurable colors, donor accounts, and payment reporting.
 
 == Description ==
-Donation Box brings one-time and monthly donations to your WordPress site through Stripe Checkout. Designed for charities, community organisations and independent projects, it includes a responsive donation form and an admin dashboard without requiring WooCommerce.
+Pledgly Donations brings one-time and monthly donations to your WordPress site through Stripe Checkout. Designed for charities, community organisations and independent projects, it includes a responsive donation form and an admin dashboard without requiring WooCommerce.
 
 = Features =
 * One-time and monthly donations with suggested or custom amounts.
@@ -22,9 +22,9 @@ Donation Box brings one-time and monthly donations to your WordPress site throug
 * Payments, subscriptions, donors, filters and CSV export.
 * WordPress subscriber accounts created after confirmed successful payments.
 * Signed webhooks, duplicate-event protection, renewal and refund tracking.
-* EUR, USD and GBP settings, translation-ready strings and bundled Dutch.
+* Multi-currency settings (EUR, USD and GBP) and translation-ready strings.
 
-Use [donation_box] for the donation form and [donation_box_account] for authenticated donor history. Configure Donation Box > Settings before accepting payments. Payment-method availability depends on Stripe eligibility, currency and payment flow. Stripe processing and Billing fees may apply; the plugin adds no platform fee.
+Use [donation_box] for the donation form and [donation_box_account] for authenticated donor history. Configure Pledgly Donations > Settings before accepting payments. Payment-method availability depends on Stripe eligibility, currency and payment flow. Stripe processing and Billing fees may apply; the plugin adds no platform fee.
 
 = External service: Stripe =
 This plugin uses Stripe to create Checkout Sessions and Customer Portal sessions and to retrieve payment, invoice, subscription and refund information. It sends donation amounts, currency, donor email, donation references and configured donation titles when creating checkout sessions. When a signed event arrives, it retrieves relevant Stripe records to confirm payment and update the local records. Portal access sends the customer's Stripe ID and a return URL.
@@ -39,8 +39,8 @@ Deactivation and removal preserve donation records and saved settings. Configure
 Source and documentation: https://github.com/usmanahmedmalik/wp-donation-box-plugin
 
 == Installation ==
-1. Upload donation-box.zip through Plugins > Add New Plugin, or place the donation-box folder in wp-content/plugins.
-2. Activate Donation Box and open Donation Box > Settings.
+1. Upload pledgly-donations.zip through Plugins > Add New Plugin, or place the pledgly-donations folder in wp-content/plugins.
+2. Activate Pledgly Donations and open Pledgly Donations > Settings.
 3. Configure the donation form, currency, amounts and colours.
 4. Add the Stripe test secret API key and webhook signing secret. Register the displayed test endpoint in Stripe using API version 2024-06-20 and the events listed in settings.
 5. Add [donation_box] to a donation page and [donation_box_account] to an account page.
@@ -50,8 +50,8 @@ Source and documentation: https://github.com/usmanahmedmalik/wp-donation-box-plu
 Requires MySQL/MariaDB with GET_LOCK support. See the repository documentation for complete setup and operational limitations.
 
 == Frequently Asked Questions ==
-= Does Donation Box require WooCommerce? =
-No. Donation Box runs independently of WooCommerce.
+= Does Pledgly Donations require WooCommerce? =
+No. Pledgly Donations runs independently of WooCommerce.
 
 = Does it support Elementor? =
 Yes. Place [donation_box] in Elementor's Shortcode widget.
@@ -72,6 +72,9 @@ Issue refunds in Stripe. Supported webhook events update the local donation reco
 No. Records and saved settings are retained. Removing the plugin also does not cancel subscriptions at Stripe.
 
 == Changelog ==
+= 0.1.6 =
+Renamed the plugin to Pledgly Donations and switched to WordPress.org language packs.
+
 = 0.1.5 =
 Prepare SQL identifiers and filter values, sanitise URL/server input, document read-only queries, add translator context and update compatibility metadata. Settings and donation records are preserved.
 

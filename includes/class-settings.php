@@ -5,8 +5,8 @@ final class Donation_Box_Settings {
         $defaults = array_map(static fn ($color) => $color[1], self::colors());
         return wp_parse_args(get_option('donation_box_settings', []), $defaults + [
             'mode' => 'test', 'currency' => 'eur', 'amounts' => '15,25,50,100,250,500',
-            'title' => __('Make a difference', 'donation-box'),
-            'description' => __('Your generosity helps our community grow.', 'donation-box'),
+            'title' => __('Make a difference', 'pledgly-donations'),
+            'description' => __('Your generosity helps our community grow.', 'pledgly-donations'),
             'test_key' => '', 'live_key' => '', 'test_webhook' => '', 'live_webhook' => '',
         ]);
     }
@@ -20,15 +20,15 @@ final class Donation_Box_Settings {
     }
     public static function colors(): array {
         return [
-            'color_primary' => [__('Primary / buttons', 'donation-box'), '#0071DC'],
-            'color_secondary' => [__('Secondary / accents', 'donation-box'), '#FFC221'],
-            'color_heading' => [__('Headings', 'donation-box'), '#031F42'],
-            'color_text' => [__('Body text', 'donation-box'), '#252525'],
-            'color_muted' => [__('Muted text', 'donation-box'), '#696969'],
-            'color_background' => [__('Box background', 'donation-box'), '#FFFFFF'],
-            'color_light' => [__('Selected amount background', 'donation-box'), '#F2F2F2'],
-            'color_border' => [__('Borders', 'donation-box'), '#EEEEEE'],
-            'color_button_text' => [__('Button text', 'donation-box'), '#FFFFFF'],
+            'color_primary' => [__('Primary / buttons', 'pledgly-donations'), '#0071DC'],
+            'color_secondary' => [__('Secondary / accents', 'pledgly-donations'), '#FFC221'],
+            'color_heading' => [__('Headings', 'pledgly-donations'), '#031F42'],
+            'color_text' => [__('Body text', 'pledgly-donations'), '#252525'],
+            'color_muted' => [__('Muted text', 'pledgly-donations'), '#696969'],
+            'color_background' => [__('Box background', 'pledgly-donations'), '#FFFFFF'],
+            'color_light' => [__('Selected amount background', 'pledgly-donations'), '#F2F2F2'],
+            'color_border' => [__('Borders', 'pledgly-donations'), '#EEEEEE'],
+            'color_button_text' => [__('Button text', 'pledgly-donations'), '#FFFFFF'],
         ];
     }
     public static function color_style(): string {
@@ -63,7 +63,7 @@ final class Donation_Box_Settings {
                 if ($value === '') { continue; }
                 $pattern = $type === 'key' ? '/^sk_' . $mode . '_[A-Za-z0-9]+$/' : '/^whsec_[A-Za-z0-9]+$/';
                 if (preg_match($pattern, $value)) { $out[$field] = $value; }
-                else { add_settings_error('donation_box_settings', $field, __('Invalid Stripe credential. Previous value retained.', 'donation-box')); }
+                else { add_settings_error('donation_box_settings', $field, __('Invalid Stripe credential. Previous value retained.', 'pledgly-donations')); }
             }
         }
         return $out;

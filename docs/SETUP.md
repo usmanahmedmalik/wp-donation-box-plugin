@@ -1,4 +1,4 @@
-# Donation Box
+# Pledgly Donations
 
 An open-source WordPress plugin for one-time and monthly donations using Stripe Checkout. No WooCommerce, Composer dependencies, or frontend build step required.
 
@@ -13,24 +13,24 @@ An open-source WordPress plugin for one-time and monthly donations using Stripe 
 - Subscriber account created only after a confirmed successful donation; existing accounts matched by email without changing their profile or role. WordPress sends a password setup email. Payment never logs a visitor into an existing account.
 - `[donation_box_account]` for authenticated donation history and payment/subscription management.
 - Admin overview, payments, subscriptions, donors, mode/status/email filters, pagination, Stripe dashboard links, and streamed CSV exports.
-- Translation-ready strings and a bundled Dutch translation. RTL-friendly layout.
+- Translation-ready strings and RTL-friendly layout.
 
 ## Installation
 
 Requires WordPress 6.6+, PHP 8.1+, and MySQL/MariaDB with advisory lock support (`GET_LOCK`).
 
-1. Run `python3 scripts/build.py` to create `dist/donation-box.zip`.
-2. In WordPress, open **Plugins → Add New Plugin → Upload Plugin**, upload that ZIP, and activate **Donation Box**.
-3. Open **Donation Box → Settings**.
+1. Run `python3 scripts/build.py` to create `dist/pledgly-donations.zip`.
+2. In WordPress, open **Plugins → Add New Plugin → Upload Plugin**, upload that ZIP, and activate **Pledgly Donations**.
+3. Open **Pledgly Donations → Settings**.
 4. Set title, text, currency, suggested amounts, and colors.
 5. Create a donation page containing `[donation_box]`. In Elementor use the **Shortcode** widget.
 6. Create an account page containing `[donation_box_account]` and link to it from your website menu.
 
-Alternatively, place the repository folder at `wp-content/plugins/donation-box` and activate it. This repository does not automatically modify another local WordPress installation.
+Alternatively, place the repository folder at `wp-content/plugins/pledgly-donations` and activate it. This repository does not automatically modify another local WordPress installation.
 
 ## Stripe settings
 
-Start in **Test** mode. In **Donation Box → Settings**, each mode has:
+Start in **Test** mode. In **Pledgly Donations → Settings**, each mode has:
 
 | Field | What to use |
 | --- | --- |

@@ -1,5 +1,5 @@
 msgid ""
-msgstr "Project-Id-Version: Donation Box 0.1.3\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: nl_NL\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
+msgstr "Project-Id-Version: Pledgly Donations\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: nl_NL\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "1. Your donation"
 msgstr "1. Uw donatie"
@@ -90,12 +90,6 @@ msgstr "Beschrijving"
 
 msgid "Donate securely"
 msgstr "Veilig doneren"
-
-msgid "Donation Box"
-msgstr "Donation Box"
-
-msgid "Donation Box settings"
-msgstr "Donation Box-instellingen"
 
 msgid "Donation form"
 msgstr "Donatieformulier"
@@ -222,6 +216,12 @@ msgstr "Schakel JavaScript in om te doneren."
 
 msgid "Please wait a few minutes before trying again."
 msgstr "Wacht enkele minuten voordat u het opnieuw probeert."
+
+msgid "Pledgly Donations"
+msgstr "Pledgly Donations"
+
+msgid "Pledgly Donations settings"
+msgstr "Instellingen voor Pledgly Donations"
 
 msgid "Previous"
 msgstr "Vorige"

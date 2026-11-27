@@ -1,6 +1,6 @@
 <div align="center">
 
-# Donation Box
+# Pledgly Donations
 
 ### Giving made simple. Built for WordPress.
 
@@ -17,7 +17,7 @@ One-time and monthly donations, secure Stripe Checkout, and donor management in 
 
 ---
 
-Donation Box helps charities, community organisations, and independent projects accept donations on their own WordPress websites. Add a shortcode, connect Stripe, and manage donations without installing an online store.
+Pledgly Donations helps charities, community organisations, and independent projects accept donations on their own WordPress websites. Add a shortcode, connect Stripe, and manage donations without installing an online store.
 
 **No WooCommerce dependency. No Composer installation. No frontend build step.** Stripe processing and Billing fees may apply; this plugin adds no platform fee.
 
@@ -37,7 +37,7 @@ Donation Box helps charities, community organisations, and independent projects 
 - Shortcodes that work in the WordPress editor and Elementor's Shortcode widget.
 - Configurable palette, heading, description, and suggested amounts.
 - EUR, USD, and GBP configuration; payment-method availability depends on currency and Stripe eligibility.
-- Translation-ready interface, bundled Dutch translation, and RTL-friendly layout.
+- Translation-ready interface and RTL-friendly layout.
 
 ### Payments with a clear record
 
@@ -53,8 +53,8 @@ Donation Box helps charities, community organisations, and independent projects 
 **Requirements:** WordPress 6.6+, PHP 8.1+, MySQL/MariaDB with `GET_LOCK` support, and a Stripe account. Live checkout requires HTTPS.
 
 1. Build an installable ZIP with `python3 scripts/build.py`.
-2. Upload `dist/donation-box.zip` through **Plugins → Add New Plugin → Upload Plugin** and activate it.
-3. Open **Donation Box → Settings** and configure your donation text, amounts, and colours.
+2. Upload `dist/pledgly-donations.zip` through **Plugins → Add New Plugin → Upload Plugin** and activate it.
+3. Open **Pledgly Donations → Settings** and configure your donation text, amounts, and colours.
 4. Add your Stripe **test secret API key** and **test webhook signing secret**.
 5. Register the displayed test webhook URL in Stripe and enable the events listed in settings.
 6. Add the donation shortcode to a page:
@@ -69,7 +69,7 @@ Donation Box helps charities, community organisations, and independent projects 
    [donation_box_account]
    ```
 
-For a source installation, place the plugin in `wp-content/plugins/donation-box/`. The repository name and installable plugin folder name differ intentionally.
+For a source installation, place the plugin in `wp-content/plugins/pledgly-donations/`. The repository name and installable plugin folder name differ intentionally.
 
 ## Connect Stripe
 
